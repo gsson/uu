@@ -28,7 +28,7 @@ type readerLineReader struct {
 	scratch []byte
 }
 
-type bufReaderLineReader struct {
+type bufioLineReader struct {
 	reader *bufio.Reader
 	err    error
 }
@@ -125,12 +125,12 @@ func (r *readerLineReader) ReadLine() ([]byte, error) {
 	return l, nil
 }
 
-// NewBufReaderLineReader creates a LineReader for reading from an bufio.Reader
-func NewBufReaderLineReader(reader *bufio.Reader) LineReader {
-	return &bufReaderLineReader{reader: reader, err: nil}
+// NewBufioLineReader creates a LineReader for reading lines from a bufio.Reader
+func NewBufioLineReader(reader *bufio.Reader) LineReader {
+	return &bufioLineReader{reader: reader, err: nil}
 }
 
-func (r *bufReaderLineReader) ReadLine() ([]byte, error) {
+func (r *bufioLineReader) ReadLine() ([]byte, error) {
 	if r.err != nil {
 		return nil, r.err
 	}
