@@ -64,7 +64,7 @@ func TestReaderLineReaderReadLine(t *testing.T) {
 	testLineReaderReadLine(t, f)
 }
 
-func TestBufReaderLineReaderReadLine(t *testing.T) {
+func TestBufioLineReaderReadLine(t *testing.T) {
 	f := func(in []byte) LineReader {
 		return NewBufioLineReader(bufio.NewReader(bytes.NewBuffer(in)))
 	}
