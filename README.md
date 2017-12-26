@@ -1,6 +1,7 @@
 # UU
 
-[![Build Status](https://travis-ci.org/gsson/uu.svg)](https://travis-ci.org/gsson/uu) [![Go Report Card](https://goreportcard.com/badge/github.com/gsson/uu)](https://goreportcard.com/report/github.com/gsson/uu) [![License](https://img.shields.io/github/license/gsson/uu.svg?maxAge=2592000)](https://github.com/gsson/uu/blob/master/LICENSE) [![Documentation](https://godoc.org/github.com/gsson/uu?status.svg)](http://godoc.org/github.com/gsson/uu)
+[![Build Status](https://travis-ci.org/gsson/uu.svg)](https://travis-ci.org/gsson/uu) [![Go Report Card](https://goreportcard.com/badge/github.com/gsson/uu)](https://goreportcard.com/report/github.com/gsson/uu) [![License](https://img.shields.io/github/license/gsson/uu.svg?maxAge=2592000)](https://github.com/gsson/uu/blob/master/LICENSE) [![Documentation](https://godoc.org/github.com/gsson/uu?status.svg)](http://godoc.org/github.com/gsson/uu) [![Code coverage](https://img.shields.io/codecov/c/github/gsson/uu.svg)](codecov.io/github/gsson/uu?branch=master)
+
 UU decoder written in Go because why not.
 
 ## Usage
