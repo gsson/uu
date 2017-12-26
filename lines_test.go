@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io"
 	"testing"
+	"testing/iotest"
 )
 
 type ByteSliceReader struct {
@@ -57,6 +58,15 @@ func TestByteReaderLineReaderReadLine(t *testing.T) {
 	testLineReaderReadLine(t, f)
 }
 
+func TestByteReaderLineReaderReadLineError(t *testing.T) {
+	expected := newError("Error test")
+	lineReader := &byteReaderLineReader{reader: nil, err: expected}
+
+	line, err := lineReader.ReadLine()
+	assert.Nil(t, line)
+	assert.Equal(t, expected, err)
+}
+
 func TestReaderLineReaderReadLine(t *testing.T) {
 	f := func(in []byte) LineReader {
 		return NewReaderLineReader(bytes.NewBuffer(in))
@@ -64,11 +74,57 @@ func TestReaderLineReaderReadLine(t *testing.T) {
 	testLineReaderReadLine(t, f)
 }
 
+func TestReaderLineReaderReadLineError(t *testing.T) {
+	expected := newError("Error test")
+	lineReader := &readerLineReader{reader: nil, err: expected}
+
+	line, err := lineReader.ReadLine()
+	assert.Nil(t, line)
+	assert.Equal(t, expected, err)
+}
+
 func TestBufioLineReaderReadLine(t *testing.T) {
 	f := func(in []byte) LineReader {
 		return NewBufioLineReader(bufio.NewReader(bytes.NewBuffer(in)))
 	}
 	testLineReaderReadLine(t, f)
+}
+
+func TestBufioLineReaderReadLine_error(t *testing.T) {
+	expected := newError("Error test")
+	lineReader := &bufioLineReader{reader: nil, err: expected}
+
+	line, err := lineReader.ReadLine()
+	assert.Nil(t, line)
+	assert.Equal(t, expected, err)
+}
+
+func TestBufioLineReaderReadLine_partialLine(t *testing.T) {
+	expected := []byte("a reasonably long line that could concievably come to be split if the buffer size is small enough")
+	r := bufio.NewReaderSize(bytes.NewBuffer(expected), 20)
+	reader := NewBufioLineReader(r)
+
+	line, err := reader.ReadLine()
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
+
+	line, err = reader.ReadLine()
+	assert.Nil(t, line)
+	assert.Equal(t, io.EOF, err)
+}
+
+func TestBufioLineReaderReadLine_eofLine(t *testing.T) {
+	expected := []byte("input")
+	r := bufio.NewReader(iotest.DataErrReader(bytes.NewBuffer(expected)))
+	reader := NewBufioLineReader(r)
+
+	line, err := reader.ReadLine()
+	assert.Nil(t, err)
+	assert.Equal(t, expected, line)
+
+	line, err = reader.ReadLine()
+	assert.Nil(t, line)
+	assert.Equal(t, io.EOF, err)
 }
 
 func testLineReaderReadLine(t *testing.T, newLineReader newLineReader) {

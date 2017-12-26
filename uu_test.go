@@ -8,7 +8,34 @@ import (
 	"testing"
 )
 
-func TestLineBytes(t *testing.T) {
+type DummyLineReader struct {
+	values []interface{}
+}
+
+func NewDummyLineReader(values ...interface{}) LineReader {
+	return &DummyLineReader{values: values}
+}
+
+func (r *DummyLineReader) ReadLine() ([]byte, error) {
+	if len(r.values) == 0 {
+		return nil, io.EOF
+	}
+	var v interface{}
+
+	v, r.values = r.values[0], r.values[1:]
+
+	switch v.(type) {
+	case string:
+		return []byte(v.(string)), nil
+	case []byte:
+		return v.([]byte), nil
+	case error:
+		return nil, v.(error)
+	}
+	panic("Bad type")
+}
+
+func TestOutLengthFromByte(t *testing.T) {
 	assertLineBytes(t, 'M', 45)
 	assertLineBytes(t, '!', 1)
 	assertLineBytes(t, '`', 0)
@@ -18,7 +45,7 @@ func TestLineBytes(t *testing.T) {
 	assertLineBytesError(t, 255)
 }
 
-func TestInputLength(t *testing.T) {
+func TestInLengthFromOutLength(t *testing.T) {
 	assert.Equal(t, inLengthFromOutLength(0), 0)
 	assert.Equal(t, inLengthFromOutLength(1), 4)
 	assert.Equal(t, inLengthFromOutLength(2), 4)
@@ -53,6 +80,9 @@ func TestParsePayloadLine(t *testing.T) {
 	assertPayloadLineParsed(t, "%86)C9&4`\n", "abcde")
 	assertPayloadLineParsed(t, "&86)C9&5F\n", "abcdef")
 	assertPayloadLineParsed(t, "::'1T<#HO+W=W=RYW:6MI<&5D:6$N;W)G#0H`\n", "http://www.wikipedia.org\r\n")
+
+	assertPayloadLineFails(t, "%80``\n", newError("Input line too short"))
+	assertPayloadLineFails(t, "N\n", newError("Invalid line length byte"))
 }
 
 func TestParseBeginLine(t *testing.T) {
@@ -76,8 +106,63 @@ func TestParseEndLine(t *testing.T) {
 	assertEndLineFails(t, "fnord", FileInfo{encoding: base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
 }
 
-func TestDecodeFile(t *testing.T) {
+func TestUuReader_decodesFile(t *testing.T) {
 	assertDecodes(t, "test.uu", 0644, "test.bin")
+}
+
+func TestUuReader_ReadByte_readsInfo(t *testing.T) {
+	reader := NewReader(NewSliceLineReader([]byte("begin 000 hello.txt\n`\nend")))
+	b, err := reader.ReadByte()
+
+	assert.Zero(t, b)
+	assert.Equal(t, io.EOF, err)
+
+	fileInfo, _ := reader.FileInfo()
+
+	assert.Equal(t, &FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"}, fileInfo)
+}
+
+func TestUuReader_Read_readsInfo(t *testing.T) {
+	reader := NewReader(NewSliceLineReader([]byte("begin 000 hello.txt\n`\nend")))
+	content := make([]byte, 0, 10)
+	n, err := reader.Read(content)
+
+	assert.Zero(t, n)
+	assert.Equal(t, io.EOF, err)
+
+	fileInfo, _ := reader.FileInfo()
+
+	assert.Equal(t, &FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"}, fileInfo)
+}
+
+func TestUuReader_FileInfo_readError(t *testing.T) {
+	expected := newError("some error")
+	reader := NewReader(NewDummyLineReader(expected))
+	fileInfo, err := reader.FileInfo()
+
+	assert.Nil(t, fileInfo)
+	assert.Equal(t, expected, err)
+}
+
+func TestUuReader_FileInfo_parseError(t *testing.T) {
+	reader := NewReader(NewDummyLineReader("invalid-begin 000 hello.txt"))
+	fileInfo, err := reader.FileInfo()
+
+	assert.Nil(t, fileInfo)
+	assert.EqualError(t, err, "Invalid header")
+}
+
+func TestUuReader_ReadByte_readError(t *testing.T) {
+	expected := newError("some error")
+	reader := NewReader(NewDummyLineReader("begin 000 hello.txt", expected))
+
+	_, err := reader.FileInfo()
+	assert.Nil(t, err)
+
+	b, err := reader.ReadByte()
+
+	assert.Zero(t, b)
+	assert.Equal(t, expected, err)
 }
 
 func decodeWithReadByte(t *testing.T, reader io.ByteReader) []byte {
@@ -161,12 +246,16 @@ func assertPayloadLineParsed(t *testing.T, in string, expected string) {
 	assert.Equal(t, []byte(expected), out)
 }
 
-func assertPayloadLineEOF(t *testing.T, in string) {
+func assertPayloadLineFails(t *testing.T, in string, expected error) {
 	fileInfo := FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"}
 	out := make([]byte, 0)
 	out, err := parsePayloadLine(&fileInfo, []byte(in), out)
 	assert.Nil(t, out)
-	assert.Equal(t, err, io.EOF)
+	assert.Equal(t, expected, err)
+}
+
+func assertPayloadLineEOF(t *testing.T, in string) {
+	assertPayloadLineFails(t, in, io.EOF)
 }
 
 func assertLineBytes(t *testing.T, in byte, expected int) {
