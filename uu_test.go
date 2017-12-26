@@ -56,8 +56,8 @@ func TestParsePayloadLine(t *testing.T) {
 }
 
 func TestParseBeginLine(t *testing.T) {
-	assertBeginLineParsed(t, "begin 000 hello.txt", FileInfo{Encoding: UUEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
-	assertBeginLineParsed(t, "begin-base64 000 hello.txt", FileInfo{Encoding: Base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertBeginLineParsed(t, "begin 000 hello.txt", FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertBeginLineParsed(t, "begin-base64 000 hello.txt", FileInfo{encoding: base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
 
 	assertBeginLineFails(t, "begin-base63 000 hello.txt", "Invalid header")
 	assertBeginLineFails(t, "", "Invalid header")
@@ -67,13 +67,13 @@ func TestParseBeginLine(t *testing.T) {
 }
 
 func TestParseEndLine(t *testing.T) {
-	assertEndLineParsed(t, "end", FileInfo{Encoding: UUEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
-	assertEndLineParsed(t, "====", FileInfo{Encoding: Base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertEndLineParsed(t, "end", FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertEndLineParsed(t, "====", FileInfo{encoding: base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
 
-	assertEndLineFails(t, "====", FileInfo{Encoding: UUEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
-	assertEndLineFails(t, "end", FileInfo{Encoding: Base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
-	assertEndLineFails(t, "fnord", FileInfo{Encoding: UUEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
-	assertEndLineFails(t, "fnord", FileInfo{Encoding: Base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertEndLineFails(t, "====", FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertEndLineFails(t, "end", FileInfo{encoding: base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertEndLineFails(t, "fnord", FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"})
+	assertEndLineFails(t, "fnord", FileInfo{encoding: base64Encoding, Mode: os.FileMode(0), Name: "hello.txt"})
 }
 
 func TestDecodeFile(t *testing.T) {
@@ -120,7 +120,7 @@ func assertDecodes(t *testing.T, uuFileName string, mode os.FileMode, fileName s
 	assert.Nil(t, err)
 	assert.Equal(t, fileName, fileInfo.Name)
 	assert.Equal(t, mode, fileInfo.Mode)
-	assert.Equal(t, UUEncoding, fileInfo.Encoding)
+	assert.Equal(t, uuEncoding, fileInfo.encoding)
 
 	contents := decodeWithReadByte(t, r)
 	assert.Equal(t, expected, contents)
@@ -154,7 +154,7 @@ func assertEndLineFails(t *testing.T, in string, expected FileInfo) {
 }
 
 func assertPayloadLineParsed(t *testing.T, in string, expected string) {
-	fileInfo := FileInfo{Encoding: UUEncoding, Mode: os.FileMode(0), Name: "hello.txt"}
+	fileInfo := FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"}
 	out := make([]byte, 0, len(expected))
 	out, err := parsePayloadLine(&fileInfo, []byte(in), out)
 	assert.Nil(t, err)
@@ -162,7 +162,7 @@ func assertPayloadLineParsed(t *testing.T, in string, expected string) {
 }
 
 func assertPayloadLineEOF(t *testing.T, in string) {
-	fileInfo := FileInfo{Encoding: UUEncoding, Mode: os.FileMode(0), Name: "hello.txt"}
+	fileInfo := FileInfo{encoding: uuEncoding, Mode: os.FileMode(0), Name: "hello.txt"}
 	out := make([]byte, 0)
 	out, err := parsePayloadLine(&fileInfo, []byte(in), out)
 	assert.Nil(t, out)

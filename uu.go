@@ -7,14 +7,13 @@ import (
 	"strconv"
 )
 
-// Encoding is the file encoding variant
-type Encoding int
+type encoding int
 
 const (
-	// UUEncoding File is UU encoded
-	UUEncoding Encoding = iota
-	// Base64Encoding File is Base64 encoded
-	Base64Encoding
+	// uuEncoding File is UU encoded
+	uuEncoding encoding = iota
+	// base64Encoding File is Base64 encoded
+	base64Encoding
 )
 
 type uuError struct {
@@ -27,7 +26,7 @@ func (e *uuError) Error() string {
 
 // FileInfo is the exposes meta-data about the encoded data
 type FileInfo struct {
-	Encoding Encoding
+	encoding encoding
 	Name     string
 	Mode     os.FileMode
 }
@@ -219,12 +218,12 @@ func fileMode(mode []byte) (os.FileMode, error) {
 	return os.FileMode(v), nil
 }
 
-func encoding(begin []byte) (Encoding, error) {
+func fileEncoding(begin []byte) (encoding, error) {
 	switch string(begin) {
 	case "begin":
-		return UUEncoding, nil
+		return uuEncoding, nil
 	case "begin-base64":
-		return Base64Encoding, nil
+		return base64Encoding, nil
 	default:
 		return 0, newError("Invalid header")
 	}
@@ -245,7 +244,7 @@ func parseBegin(in []byte) (*FileInfo, error) {
 
 	file := string(tail)
 
-	encoding, err := encoding(begin)
+	encoding, err := fileEncoding(begin)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +253,7 @@ func parseBegin(in []byte) (*FileInfo, error) {
 		return nil, err
 	}
 
-	return &FileInfo{Encoding: encoding, Mode: fileMode, Name: file}, nil
+	return &FileInfo{encoding: encoding, Mode: fileMode, Name: file}, nil
 }
 
 func parseEnd(fileInfo *FileInfo, in []byte) error {
@@ -265,13 +264,13 @@ func parseEnd(fileInfo *FileInfo, in []byte) error {
 }
 
 func endMarker(fileInfo *FileInfo) []byte {
-	switch fileInfo.Encoding {
-	case UUEncoding:
+	switch fileInfo.encoding {
+	case uuEncoding:
 		return []byte("end")
-	case Base64Encoding:
+	case base64Encoding:
 		return []byte("====")
 	}
-	panic("Invalid encoding in FileInfo")
+	panic("Invalid encoding")
 }
 
 func parsePayloadLine(fileInfo *FileInfo, in []byte, out []byte) ([]byte, error) {
