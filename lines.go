@@ -135,12 +135,15 @@ func (r *bufioLineReader) ReadLine() ([]byte, error) {
 		return nil, r.err
 	}
 
-	var linePart, isPrefix, err = r.reader.ReadLine()
-	var line []byte
-
+	line, isPrefix, err := r.reader.ReadLine()
 	if err == nil {
-		line = append(make([]byte, 0, lineLength), linePart...)
+		if !isPrefix {
+			return line, nil
+		}
+
+		line = append(make([]byte, 0, lineLength), line...)
 		for err == nil && isPrefix {
+			var linePart []byte
 			linePart, isPrefix, err = r.reader.ReadLine()
 			line = append(line, linePart...)
 		}
@@ -150,9 +153,6 @@ func (r *bufioLineReader) ReadLine() ([]byte, error) {
 		r.err = err
 		r.reader = nil
 
-		if line != nil && err == io.EOF {
-			return line, nil
-		}
 		return nil, err
 	}
 

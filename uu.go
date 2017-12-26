@@ -133,10 +133,6 @@ func (r *uuReader) readEnd() {
 }
 
 func (r *uuReader) readInfo() {
-	if r.err != nil {
-		return
-	}
-
 	line, err := r.reader.ReadLine()
 	if err != nil {
 		r.err = err
@@ -154,9 +150,10 @@ func (r *uuReader) readInfo() {
 func (r *uuReader) FileInfo() (*FileInfo, error) {
 	if r.info == nil {
 		r.readInfo()
+		return r.info, r.err
 	}
 
-	return r.info, r.err
+	return r.info, nil
 }
 
 func newError(message string) *uuError {
