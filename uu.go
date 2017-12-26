@@ -1,3 +1,4 @@
+// Package uu contains tools for reading UU encoded data.
 package uu
 
 import (

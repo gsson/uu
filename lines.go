@@ -33,7 +33,7 @@ type bufioLineReader struct {
 	err    error
 }
 
-// NewSliceLineReader creates a LineReader for reading from a []byte slice
+// NewSliceLineReader creates a LineReader for reading lines from a []byte slice
 func NewSliceLineReader(bytes []byte) LineReader {
 	if len(bytes) == 0 {
 		return &sliceLineReader{remaining: nil}
@@ -57,7 +57,7 @@ func (r *sliceLineReader) ReadLine() ([]byte, error) {
 	return res, nil
 }
 
-// NewByteReaderLineReader creates a LineReader for reading from an io.ByteReader
+// NewByteReaderLineReader creates a LineReader for reading lines from a io.ByteReader
 func NewByteReaderLineReader(reader io.ByteReader) LineReader {
 	return &byteReaderLineReader{reader: reader, err: nil}
 }
@@ -91,7 +91,7 @@ func (r *byteReaderLineReader) ReadLine() ([]byte, error) {
 	return l, nil
 }
 
-// NewReaderLineReader creates a LineReader for reading from an io.Reader
+// NewReaderLineReader creates a LineReader for reading lines from a io.Reader
 func NewReaderLineReader(reader io.Reader) LineReader {
 	return &readerLineReader{reader: reader, err: nil, scratch: make([]byte, 1)}
 }
